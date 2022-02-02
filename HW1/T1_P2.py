@@ -27,13 +27,45 @@ y_train = np.array([d[1] for d in data])
 
 x_test = np.arange(0, 12, .1)
 
-print("y is:")
-print(y_train)
+# Kernel Function
+def K(x1, x2, tau):
+    return np.exp(-1 * np.linalg.norm(x1 - x2) ** 2 / tau)
+
+# Finds the array of indices of the k nearest neighbors to point x
+def point_knn(x, k, tau):
+    # Indexes of the k closest points
+    close_indices = np.array(range(k))
+    # Distances of the k closest points (initialized to first k points)
+    close_dists = np.array([K(x, x_train[i], tau) for i in close_indices])
+    
+    for i,el in enumerate(x_train):
+        # Finds the difference between el and x
+        dist = K(x, el, tau)
+        # Finds the furthest known point from x
+        min_index = np.argmin(close_dists, axis=0)
+        # If el is closer, have it replace it
+        if (close_dists[min_index] <= dist and not i in close_indices):
+            close_indices[min_index] = i
+            close_dists[min_index] = dist
+            
+    return close_indices
+        
+        
+    
 
 def predict_knn(k=1, tau=1):
     """Returns predictions for the values in x_test, using KNN predictor with the specified k."""
-    # TODO: your code here
-    return np.zeros(len(x_test))
+    predictions = np.zeros(len(x_test))
+
+    for i,x in enumerate(x_test):
+        # Indices of the k nearest neighbors 
+        indices = point_knn(x, k, tau)
+        
+        predictions[i] = np.sum([y_train[j] for j in indices]) / k
+    
+    return predictions
+    
+    
 
 
 def plot_knn_preds(k):
@@ -50,5 +82,5 @@ def plot_knn_preds(k):
     plt.savefig('k' + str(k) + '.png')
     plt.show()
 
-for k in (1, 3, len(x_train)-1):
+for k in (1, 3, len(x_train)-1, len(x_train)):
     plot_knn_preds(k)
